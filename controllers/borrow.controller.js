@@ -1,21 +1,23 @@
 const Borrow = require("../models/borrow.model");
 const Book = require("../models/Book.model");
-
+const HttpStatusText = require("../utils/HttpStatusText");
 //// Get All Borrows
 const getAllBorrows = async (req, res) => {
   const borrows = await Borrow.find().populate("book", "title -_id");
 
   if (borrows.length === 0) {
     return res.status(404).json({
-      status: "fail",
-      message: "No borrows found",
+      status: HttpStatusText.FAIL,
+      data: { borrows: "No borrows found" },
     });
   }
 
   res.status(200).json({
-    status: "success",
-    results: borrows.length,
-    data: borrows,
+    status: HttpStatusText.SUCCESS,
+    data: {
+      results: borrows.length,
+      data: borrows,
+    },
   });
 };
 
@@ -28,16 +30,16 @@ const borrowBook = async (req, res) => {
 
   if (!book) {
     return res.status(404).json({
-      status: "fail",
-      message: "Book not found",
+      status: HttpStatusText.FAIL,
+      data: { bookId: "Book not found" },
     });
   }
 
   // Check Stock
   if (book.stock <= 0) {
     return res.status(400).json({
-      status: "fail",
-      message: "Book is out of stock",
+      status: HttpStatusText.FAIL,
+      data: { stock: "Book is out of stock" },
     });
   }
 
@@ -53,7 +55,7 @@ const borrowBook = async (req, res) => {
   });
 
   res.status(201).json({
-    status: "success",
+    status: HttpStatusText.SUCCESS,
     data: borrow,
   });
 };
@@ -67,16 +69,16 @@ const returnBook = async (req, res) => {
 
   if (!borrow) {
     return res.status(404).json({
-      status: "fail",
-      message: "Borrow record not found",
+      status: HttpStatusText.FAIL,
+      data: { message: "Borrow record not found" },
     });
   }
 
   // Prevent Returning Twice
   if (borrow.status === "returned") {
     return res.status(400).json({
-      status: "fail",
-      message: "Book already returned",
+      status: HttpStatusText.FAIL,
+      data: { message: "Book already returned" },
     });
   }
 
@@ -97,7 +99,7 @@ const returnBook = async (req, res) => {
   }
 
   res.status(200).json({
-    status: "success",
+    status: HttpStatusText.SUCCESS,
     data: borrow,
   });
 };

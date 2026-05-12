@@ -1,0 +1,5 @@
+{
+  "github.copilot.nextEditSuggestions.enabled": true,
+  "github.copilot.nextEditSuggestions.extendedRange": true,
+  "github.copilot.renameSuggestions.triggerAutomatically": true
+}

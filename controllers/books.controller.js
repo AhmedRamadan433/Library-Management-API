@@ -1,5 +1,6 @@
 const Book = require("../models/Book.model.js");
 const { validationResult } = require("express-validator");
+const HttpStatusText = require("../utils/HttpStatusText");
 
 const getAllBooks = async (req, res) => {
   const {
@@ -51,9 +52,11 @@ const getAllBooks = async (req, res) => {
     .limit(limit);
 
   res.status(200).json({
-    status: "success",
-    results: books.length,
-    data: books,
+    status: HttpStatusText.SUCCESS,
+    data: {
+      results: books.length,
+      data: books,
+    },
   });
 };
 /////////////////
@@ -63,20 +66,28 @@ const getSingleBook = async (req, res) => {
     .populate("author", "name")
     .populate("category", "name");
   if (!book) {
-    return res.status(404).json({ message: "Book Not Found" });
+    return res
+      .status(404)
+      .json({ status: HttpStatusText.FAIL, data: { Book: "Book Not Found" } });
   }
-  res.status(200).json({ status: "success", Data: book });
+  res.status(200).json({ status: HttpStatusText.SUCCESS, data: book });
 };
 
 const createBook = async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
+    return res
+      .status(400)
+      .json({ status: HttpStatusText.FAIL, data: { errors: errors.array() } });
   }
   const data = req.body;
   await Book.create(data);
+
   res.status(201).json({
-    message: "Book Created Successfully",
+    status: HttpStatusText.SUCCESS,
+    data: {
+      message: "Book Created Successfully",
+    },
   });
 };
 /////////////////
@@ -87,9 +98,14 @@ const updateBook = async (req, res) => {
     returnDocument: "after",
   });
   if (!book) {
-    return res.status(404).json({ message: "Book Not Found" });
+    return res
+      .status(404)
+      .json({ status: HttpStatusText.FAIL, data: { Book: "Book Not Found" } });
   }
-  res.status(200).json({ status: "success", Data: book });
+  res.status(200).json({
+    status: HttpStatusText.SUCCESS,
+    data: { message: "Book updated successfully", data: book },
+  });
 };
 ////////////
 const replaceBook = async (req, res) => {
@@ -99,20 +115,28 @@ const replaceBook = async (req, res) => {
     returnDocument: "after",
   });
   if (!book) {
-    return res.status(404).json({ message: "Book Not Found" });
+    return res
+      .status(404)
+      .json({ status: HttpStatusText.FAIL, data: { Book: "Book Not Found" } });
   }
-  res.status(200).json({ status: "success", Data: book });
+  res.status(200).json({
+    status: HttpStatusText.SUCCESS,
+    data: { message: "Book replaced successfully", data: book },
+  });
 };
 //////////////////
 const deleteBook = async (req, res) => {
   const id = req.params.id;
   const book = await Book.findByIdAndDelete({ _id: id });
   if (!book) {
-    return res.status(404).json({ message: "Book Not Found" });
+    return res
+      .status(404)
+      .json({ status: HttpStatusText.FAIL, data: { Book: "Book Not Found" } });
   }
-  res
-    .status(200)
-    .json({ status: "success", message: "Book Deleted Successfully" });
+  res.status(200).json({
+    status: HttpStatusText.SUCCESS,
+    data: null,
+  });
 };
 
 module.exports = {
