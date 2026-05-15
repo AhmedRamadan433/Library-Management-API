@@ -14,17 +14,13 @@ const createCategory = async (req, res) => {
   const category = await Category.create(data);
   res.status(201).json({
     status: HttpStatusText.SUCCESS,
-    data: {
-      category,
-    },
+    data: category,
   });
 };
 ///// Get All Categories
 const getAllCategories = async (req, res) => {
   const categories = await Category.find();
-  res
-    .status(200)
-    .json({ status: HttpStatusText.SUCCESS, data: { categories } });
+  res.status(200).json({ status: HttpStatusText.SUCCESS, data: categories });
 };
 ///// Get Single Category
 const getSingleCategory = async (req, res) => {
@@ -36,7 +32,7 @@ const getSingleCategory = async (req, res) => {
       data: { Category: "Category Not Found" },
     });
   }
-  res.status(200).json({ status: HttpStatusText.SUCCESS, data: { category } });
+  res.status(200).json({ status: HttpStatusText.SUCCESS, data: category });
 };
 ///// Update Category (Patch)
 const updateCategory = async (req, res) => {
@@ -51,7 +47,7 @@ const updateCategory = async (req, res) => {
       data: { Category: "Category Not Found" },
     });
   }
-  res.status(200).json({ status: HttpStatusText.SUCCESS, data: { category } });
+  res.status(200).json({ status: HttpStatusText.SUCCESS, data: category });
 };
 
 //// Replace Category (Put)
@@ -67,7 +63,7 @@ const replaceCategory = async (req, res) => {
       data: { Category: "Category Not Found" },
     });
   }
-  res.status(200).json({ status: HttpStatusText.SUCCESS, data: { category } });
+  res.status(200).json({ status: HttpStatusText.SUCCESS, data: category });
 };
 //// Delete Category
 const deleteCategory = async (req, res) => {

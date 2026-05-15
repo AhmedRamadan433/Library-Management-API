@@ -16,7 +16,7 @@ const getAllBorrows = async (req, res) => {
     status: HttpStatusText.SUCCESS,
     data: {
       results: borrows.length,
-      data: borrows,
+      borrows,
     },
   });
 };

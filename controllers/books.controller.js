@@ -55,7 +55,7 @@ const getAllBooks = async (req, res) => {
     status: HttpStatusText.SUCCESS,
     data: {
       results: books.length,
-      data: books,
+      books,
     },
   });
 };
@@ -87,6 +87,7 @@ const createBook = async (req, res) => {
     status: HttpStatusText.SUCCESS,
     data: {
       message: "Book Created Successfully",
+      book,
     },
   });
 };
@@ -104,7 +105,7 @@ const updateBook = async (req, res) => {
   }
   res.status(200).json({
     status: HttpStatusText.SUCCESS,
-    data: { message: "Book updated successfully", data: book },
+    data: { message: "Book updated successfully", book },
   });
 };
 ////////////
@@ -121,7 +122,7 @@ const replaceBook = async (req, res) => {
   }
   res.status(200).json({
     status: HttpStatusText.SUCCESS,
-    data: { message: "Book replaced successfully", data: book },
+    data: { message: "Book replaced successfully", book },
   });
 };
 //////////////////

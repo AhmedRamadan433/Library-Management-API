@@ -18,6 +18,7 @@ const getsingleAuthor = async (req, res) => {
   }
   res.status(200).json({ status: HttpStatusText.SUCCESS, data: author });
 };
+
 ///// create new author
 const createAuthor = async (req, res) => {
   const results = validationResult(req);
@@ -36,7 +37,7 @@ const createAuthor = async (req, res) => {
   }
   res.status(201).json({
     status: HttpStatusText.SUCCESS,
-    data: { message: "Author created successfully", data: author },
+    data: { message: "Author created successfully", author },
   });
 };
 ///// update author by id  (put)
@@ -58,7 +59,7 @@ const updateAuthor = async (req, res) => {
   }
   res.status(200).json({
     status: HttpStatusText.SUCCESS,
-    data: { message: "Author edited successfully", data: author },
+    data: { message: "Author edited successfully", author },
   });
 };
 ///// patch author by id
@@ -82,7 +83,7 @@ const patchAuthor = async (req, res) => {
   }
   res.status(200).json({
     status: HttpStatusText.SUCCESS,
-    data: { message: "Author updated successfully", data: author },
+    data: { message: "Author updated successfully", author },
   });
 };
 

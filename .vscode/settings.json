@@ -1,5 +1,9 @@
 {
-  "github.copilot.nextEditSuggestions.enabled": true,
   "github.copilot.nextEditSuggestions.extendedRange": true,
-  "github.copilot.renameSuggestions.triggerAutomatically": true
+  "github.copilot.renameSuggestions.triggerAutomatically": true,
+  "github.copilot.nextEditSuggestions.enabled": true,
+  "github.copilot.nextEditSuggestions.fixes": true,
+  "github.copilot.selectedCompletionModel": "",
+  "github.copilot.inlineSuggest.enable": false,
+  "editor.inlineSuggest.enabled": true
 }
