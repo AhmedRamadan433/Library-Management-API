@@ -1,8 +1,9 @@
 const Book = require("../models/Book.model.js");
-const { validationResult } = require("express-validator");
 const HttpStatusText = require("../utils/HttpStatusText");
-
-const getAllBooks = async (req, res) => {
+const AsyncWrapper = require("../middleware/AsyncWrapper");
+const AppError = require("../utils/AppError.js");
+const handleValidationErrors = require("../utils/handleValidationErrors");
+const getAllBooks = AsyncWrapper(async (req, res, next) => {
   const {
     search,
     category,
@@ -58,31 +59,24 @@ const getAllBooks = async (req, res) => {
       books,
     },
   });
-};
+});
 /////////////////
-const getSingleBook = async (req, res) => {
+const getSingleBook = AsyncWrapper(async (req, res, next) => {
   const id = req.params.id;
   const book = await Book.findById(id)
     .populate("author", "name")
     .populate("category", "name");
   if (!book) {
-    return res
-      .status(404)
-      .json({ status: HttpStatusText.FAIL, data: { Book: "Book Not Found" } });
+    const error = new AppError(404, "Book not found", HttpStatusText.FAIL);
+    return next(error);
   }
   res.status(200).json({ status: HttpStatusText.SUCCESS, data: book });
-};
-
-const createBook = async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res
-      .status(400)
-      .json({ status: HttpStatusText.FAIL, data: { errors: errors.array() } });
-  }
+});
+/////////// Create book
+const createBook = AsyncWrapper(async (req, res, next) => {
+  if (handleValidationErrors(req, next)) return;
   const data = req.body;
-  await Book.create(data);
-
+  const book = await Book.create(data);
   res.status(201).json({
     status: HttpStatusText.SUCCESS,
     data: {
@@ -90,55 +84,54 @@ const createBook = async (req, res) => {
       book,
     },
   });
-};
-/////////////////
-const updateBook = async (req, res) => {
+});
+///////////////// update book by id
+const updateBook = AsyncWrapper(async (req, res, next) => {
   const id = req.params.id;
   const data = req.body;
+  if (handleValidationErrors(req, next)) return;
   const book = await Book.findByIdAndUpdate({ _id: id }, data, {
     returnDocument: "after",
   });
   if (!book) {
-    return res
-      .status(404)
-      .json({ status: HttpStatusText.FAIL, data: { Book: "Book Not Found" } });
+    const error = new AppError(404, "Book not found", HttpStatusText.FAIL);
+    return next(error);
   }
   res.status(200).json({
     status: HttpStatusText.SUCCESS,
     data: { message: "Book updated successfully", book },
   });
-};
-////////////
-const replaceBook = async (req, res) => {
+});
+//////////// patch book by id
+const replaceBook = AsyncWrapper(async (req, res, next) => {
   const id = req.params.id;
   const data = req.body;
+  if (handleValidationErrors(req, next)) return;
   const book = await Book.findOneAndReplace({ _id: id }, data, {
     returnDocument: "after",
   });
   if (!book) {
-    return res
-      .status(404)
-      .json({ status: HttpStatusText.FAIL, data: { Book: "Book Not Found" } });
+    const error = new AppError(404, "Book not found", HttpStatusText.FAIL);
+    return next(error);
   }
   res.status(200).json({
     status: HttpStatusText.SUCCESS,
     data: { message: "Book replaced successfully", book },
   });
-};
+});
 //////////////////
-const deleteBook = async (req, res) => {
+const deleteBook = AsyncWrapper(async (req, res, next) => {
   const id = req.params.id;
   const book = await Book.findByIdAndDelete({ _id: id });
   if (!book) {
-    return res
-      .status(404)
-      .json({ status: HttpStatusText.FAIL, data: { Book: "Book Not Found" } });
+    const error = new AppError(404, "Book not found", HttpStatusText.FAIL);
+    return next(error);
   }
   res.status(200).json({
     status: HttpStatusText.SUCCESS,
     data: null,
   });
-};
+});
 
 module.exports = {
   getAllBooks,

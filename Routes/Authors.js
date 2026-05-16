@@ -8,12 +8,12 @@ Routes For route : "/authors"
 */
 router
   .route("/")
-  .get(authorsController.getallAuthors)
+  .get(authorsController.getAllAuthors)
   .post(validationSchema(), authorsController.createAuthor);
 /// Routes for "/authors"/id"
 router
   .route("/:id")
-  .get(authorsController.getsingleAuthor)
+  .get(authorsController.getSingleAuthor)
   .put(validationSchema(), authorsController.updateAuthor)
   .patch(validationSchema(), authorsController.patchAuthor)
   .delete(authorsController.deleteAuthor);

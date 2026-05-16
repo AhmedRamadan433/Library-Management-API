@@ -1,6 +1,6 @@
 const express = require("express");
-const BorrowController = require("../Controllers/borrow.controller");
-borrowValidationSchema = require("../middleware/borrow.validator.js");
+const BorrowController = require("../controllers/borrow.controller");
+const borrowValidationSchema = require("../middleware/borrow.validator.js");
 const router = express.Router();
 
 /*
@@ -16,8 +16,6 @@ router
 Route For Returning Book
 */
 
-router
-  .route("/:id/return")
-  .patch(borrowValidationSchema(), BorrowController.returnBook);
+router.route("/:id/return").patch(BorrowController.returnBook);
 
 module.exports = router;

@@ -10,7 +10,10 @@ Routes For "/books"
 router
   .route("/")
   .get(BooksController.getAllBooks)
-  .post(bookValidationSchema(), BooksController.createBook);
+  .post(
+    bookValidationSchema.createBookValidationSchema(),
+    BooksController.createBook,
+  );
 
 /*
 Routes For "/books/:id"
@@ -19,8 +22,14 @@ Routes For "/books/:id"
 router
   .route("/:id")
   .get(BooksController.getSingleBook)
-  .put(bookValidationSchema(), BooksController.updateBook)
-  .patch(bookValidationSchema(), BooksController.replaceBook)
+  .put(
+    bookValidationSchema.createBookValidationSchema(),
+    BooksController.replaceBook,
+  )
+  .patch(
+    bookValidationSchema.updateBookValidationSchema(),
+    BooksController.updateBook,
+  )
   .delete(BooksController.deleteBook);
 
 module.exports = router;

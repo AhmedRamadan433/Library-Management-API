@@ -1,17 +1,12 @@
-const Borrow = require("../models/borrow.model");
+const Borrow = require("../models/Borrow.model.js");
 const Book = require("../models/Book.model");
 const HttpStatusText = require("../utils/HttpStatusText");
+const AsyncWrapper = require("../middleware/AsyncWrapper");
+const AppError = require("../utils/AppError.js");
+const handleValidationErrors = require("../utils/handleValidationErrors");
 //// Get All Borrows
-const getAllBorrows = async (req, res) => {
+const getAllBorrows = AsyncWrapper(async (req, res, next) => {
   const borrows = await Borrow.find().populate("book", "title -_id");
-
-  if (borrows.length === 0) {
-    return res.status(404).json({
-      status: HttpStatusText.FAIL,
-      data: { borrows: "No borrows found" },
-    });
-  }
-
   res.status(200).json({
     status: HttpStatusText.SUCCESS,
     data: {
@@ -19,28 +14,24 @@ const getAllBorrows = async (req, res) => {
       borrows,
     },
   });
-};
+});
 
 //// Borrow Book
-const borrowBook = async (req, res) => {
+const borrowBook = AsyncWrapper(async (req, res, next) => {
   const { bookId, borrowerName } = req.body;
-
   // Check Book Exists
+  if (handleValidationErrors(req, next)) return;
   const book = await Book.findById(bookId);
 
   if (!book) {
-    return res.status(404).json({
-      status: HttpStatusText.FAIL,
-      data: { bookId: "Book not found" },
-    });
+    const error = new AppError(404, "Book not found", HttpStatusText.FAIL);
+    return next(error);
   }
 
   // Check Stock
   if (book.stock <= 0) {
-    return res.status(400).json({
-      status: HttpStatusText.FAIL,
-      data: { stock: "Book is out of stock" },
-    });
+    const error = new AppError(400, "Book out of stock", HttpStatusText.FAIL);
+    return next(error);
   }
 
   // Decrease Stock
@@ -58,28 +49,32 @@ const borrowBook = async (req, res) => {
     status: HttpStatusText.SUCCESS,
     data: borrow,
   });
-};
-
-//// Return Book
-const returnBook = async (req, res) => {
+});
+//////////////////// Return Book
+const returnBook = AsyncWrapper(async (req, res, next) => {
+  if (handleValidationErrors(req, next)) return;
   const { id } = req.params;
 
   // Find Borrow Record
   const borrow = await Borrow.findById(id);
 
   if (!borrow) {
-    return res.status(404).json({
-      status: HttpStatusText.FAIL,
-      data: { message: "Borrow record not found" },
-    });
+    const error = new AppError(
+      404,
+      "Borrow record not found",
+      HttpStatusText.FAIL,
+    );
+    return next(error);
   }
 
   // Prevent Returning Twice
   if (borrow.status === "returned") {
-    return res.status(400).json({
-      status: HttpStatusText.FAIL,
-      data: { message: "Book already returned" },
-    });
+    const error = new AppError(
+      400,
+      "Book already returned",
+      HttpStatusText.FAIL,
+    );
+    return next(error);
   }
 
   // Update Borrow Record
@@ -102,7 +97,7 @@ const returnBook = async (req, res) => {
     status: HttpStatusText.SUCCESS,
     data: borrow,
   });
-};
+});
 
 module.exports = {
   getAllBorrows,

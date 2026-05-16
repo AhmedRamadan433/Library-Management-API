@@ -1,111 +1,93 @@
-const { validationResult } = require("express-validator");
-const Author = require("../models/author.model");
+const Author = require("../models/Author.model.js");
 const HttpStatusText = require("../utils/HttpStatusText");
+const AsyncWrapper = require("../middleware/AsyncWrapper");
+const AppError = require("../utils/AppError.js");
+const handleValidationErrors = require("../utils/handleValidationErrors");
 //////get all authors
-const getallAuthors = async (req, res) => {
+const getAllAuthors = AsyncWrapper(async (req, res, next) => {
   const authors = await Author.find();
   res.status(200).json({ status: HttpStatusText.SUCCESS, data: authors });
-};
+});
 ///// get author by id
-const getsingleAuthor = async (req, res) => {
+const getSingleAuthor = AsyncWrapper(async (req, res, next) => {
   const { id } = req.params;
   const author = await Author.findById(id);
   if (!author) {
-    return res.status(404).json({
-      status: HttpStatusText.FAIL,
-      data: { message: "Author not found" },
-    });
+    const error = new AppError(404, "Author not found", HttpStatusText.FAIL);
+    return next(error);
   }
   res.status(200).json({ status: HttpStatusText.SUCCESS, data: author });
-};
+});
 
 ///// create new author
-const createAuthor = async (req, res) => {
-  const results = validationResult(req);
-  if (!results.isEmpty()) {
-    return res.status(400).json({
-      status: HttpStatusText.FAIL,
-      data: { errors: results.array() },
-    });
-  }
+const createAuthor = AsyncWrapper(async (req, res, next) => {
+  if (handleValidationErrors(req, next)) return;
   const author = await Author.create(req.body);
-  if (!author) {
-    return res.status(400).json({
-      status: HttpStatusText.ERROR,
-      message: "Failed to create author",
-    });
-  }
   res.status(201).json({
     status: HttpStatusText.SUCCESS,
     data: { message: "Author created successfully", author },
   });
-};
+});
 ///// update author by id  (put)
-const updateAuthor = async (req, res) => {
+const updateAuthor = AsyncWrapper(async (req, res, next) => {
   const { id } = req.params;
-  const results = validationResult(req);
-  if (!results.isEmpty()) {
-    return res.status(400).json({
-      status: HttpStatusText.FAIL,
-      data: { errors: results.array() },
-    });
-  }
+  if (handleValidationErrors(req, next)) return;
   const author = await Author.findOneAndReplace({ _id: id }, req.body);
   if (!author) {
-    return res.status(404).json({
-      status: HttpStatusText.FAIL,
-      data: { message: "Author not found" },
-    });
+    const error = new AppError(
+      404,
+      "Failed to update author",
+      HttpStatusText.FAIL,
+    );
+    return next(error);
   }
   res.status(200).json({
     status: HttpStatusText.SUCCESS,
     data: { message: "Author edited successfully", author },
   });
-};
+});
 ///// patch author by id
-const patchAuthor = async (req, res) => {
+const patchAuthor = AsyncWrapper(async (req, res, next) => {
   const { id } = req.params;
-  const results = validationResult(req);
-  if (!results.isEmpty()) {
-    return res.status(400).json({
-      status: HttpStatusText.FAIL,
-      data: { errors: results.array() },
-    });
-  }
+  if (handleValidationErrors(req, next)) return;
   const author = await Author.findByIdAndUpdate({ _id: id }, req.body, {
     returnDocument: "after",
   });
   if (!author) {
-    return res.status(404).json({
-      status: HttpStatusText.FAIL,
-      data: { message: "Author not found" },
-    });
+    const error = new AppError(
+      404,
+      "Failed to update author",
+      HttpStatusText.FAIL,
+    );
+    return next(error);
   }
   res.status(200).json({
     status: HttpStatusText.SUCCESS,
     data: { message: "Author updated successfully", author },
   });
-};
+});
 
 //// delete author by id
-const deleteAuthor = async (req, res) => {
+const deleteAuthor = AsyncWrapper(async (req, res, next) => {
   const { id } = req.params;
   const author = await Author.findOneAndDelete({ _id: id });
   if (!author) {
-    return res.status(404).json({
-      status: HttpStatusText.FAIL,
-      data: { message: "Author not found" },
-    });
+    const error = new AppError(
+      404,
+      "Failed to delete author",
+      HttpStatusText.FAIL,
+    );
+    return next(error);
   }
   res.status(200).json({
     status: HttpStatusText.SUCCESS,
     data: null,
   });
-};
+});
 
 module.exports = {
-  getallAuthors,
-  getsingleAuthor,
+  getAllAuthors,
+  getSingleAuthor,
   createAuthor,
   updateAuthor,
   patchAuthor,
