@@ -17,5 +17,6 @@ Route For Returning Book
 */
 
 router.route("/:id/return").patch(BorrowController.returnBook);
+router.route("/:id").get(BorrowController.getBorrowById);
 
 module.exports = router;

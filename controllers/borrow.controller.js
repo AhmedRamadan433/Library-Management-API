@@ -15,7 +15,23 @@ const getAllBorrows = AsyncWrapper(async (req, res, next) => {
     },
   });
 });
-
+//// get single borrow
+const getBorrowById = AsyncWrapper(async (req, res, next) => {
+  const { id } = req.params;
+  const borrow = await Borrow.findById(id).populate("book", "title -_id");
+  if (!borrow) {
+    const error = new AppError(
+      404,
+      "Borrow record not found",
+      HttpStatusText.FAIL,
+    );
+    return next(error);
+  }
+  res.status(200).json({
+    status: HttpStatusText.SUCCESS,
+    data: borrow,
+  });
+});
 //// Borrow Book
 const borrowBook = AsyncWrapper(async (req, res, next) => {
   const { bookId, borrowerName } = req.body;
@@ -101,6 +117,7 @@ const returnBook = AsyncWrapper(async (req, res, next) => {
 
 module.exports = {
   getAllBorrows,
+  getBorrowById,
   borrowBook,
   returnBook,
 };

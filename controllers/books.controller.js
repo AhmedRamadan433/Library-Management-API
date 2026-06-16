@@ -64,8 +64,8 @@ const getAllBooks = AsyncWrapper(async (req, res, next) => {
 const getSingleBook = AsyncWrapper(async (req, res, next) => {
   const id = req.params.id;
   const book = await Book.findById(id)
-    .populate("author", "name")
-    .populate("category", "name");
+    .populate("author", "name -_id")
+    .populate("category", "name -_id");
   if (!book) {
     const error = new AppError(404, "Book not found", HttpStatusText.FAIL);
     return next(error);
@@ -92,7 +92,10 @@ const updateBook = AsyncWrapper(async (req, res, next) => {
   if (handleValidationErrors(req, next)) return;
   const book = await Book.findByIdAndUpdate({ _id: id }, data, {
     returnDocument: "after",
-  });
+    runValidators: true,
+  })
+    .populate("author", "name -_id")
+    .populate("category", "name -_id");
   if (!book) {
     const error = new AppError(404, "Book not found", HttpStatusText.FAIL);
     return next(error);
@@ -109,6 +112,7 @@ const replaceBook = AsyncWrapper(async (req, res, next) => {
   if (handleValidationErrors(req, next)) return;
   const book = await Book.findOneAndReplace({ _id: id }, data, {
     returnDocument: "after",
+    runValidators: true,
   });
   if (!book) {
     const error = new AppError(404, "Book not found", HttpStatusText.FAIL);

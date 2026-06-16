@@ -6,7 +6,8 @@ module.exports = (req, next) => {
   if (!errors.isEmpty()) {
     const error = new AppError(400, "Validation failed", HttpStatusText.FAIL);
     error.errors = errors.array();
-    return next(error);
+    next(error);
+    return true;
   }
-  return null;
+  return false;
 };

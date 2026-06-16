@@ -35,6 +35,7 @@ const updateCategory = AsyncWrapper(async (req, res, next) => {
   if (handleValidationErrors(req, next)) return;
   const category = await Category.findByIdAndUpdate({ _id: id }, data, {
     returnDocument: "after",
+    runValidators: true,
   });
   if (!category) {
     const error = new AppError(404, "Category not found", HttpStatusText.FAIL);
@@ -50,6 +51,7 @@ const replaceCategory = AsyncWrapper(async (req, res, next) => {
   if (handleValidationErrors(req, next)) return;
   const category = await Category.findOneAndReplace({ _id: id }, data, {
     returnDocument: "after",
+    runValidators: true,
   });
   if (!category) {
     const error = new AppError(404, "Category not found", HttpStatusText.FAIL);

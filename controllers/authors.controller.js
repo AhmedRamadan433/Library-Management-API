@@ -52,6 +52,7 @@ const patchAuthor = AsyncWrapper(async (req, res, next) => {
   if (handleValidationErrors(req, next)) return;
   const author = await Author.findByIdAndUpdate({ _id: id }, req.body, {
     returnDocument: "after",
+    runValidators: true,
   });
   if (!author) {
     const error = new AppError(
