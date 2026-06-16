@@ -15,13 +15,13 @@ const createCategory = AsyncWrapper(async (req, res, next) => {
 });
 ///// Get All Categories
 const getAllCategories = AsyncWrapper(async (req, res, next) => {
-  const categories = await Category.find();
+  const categories = await Category.find().lean();
   res.status(200).json({ status: HttpStatusText.SUCCESS, data: categories });
 });
 ///// Get Single Category
 const getSingleCategory = AsyncWrapper(async (req, res, next) => {
   const id = req.params.id;
-  const category = await Category.findById(id);
+  const category = await Category.findById(id).lean();
   if (!category) {
     const error = new AppError(404, "Category not found", HttpStatusText.FAIL);
     return next(error);

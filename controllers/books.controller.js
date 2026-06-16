@@ -50,7 +50,8 @@ const getAllBooks = AsyncWrapper(async (req, res, next) => {
     .populate("category", "name -_id")
     .sort(sort)
     .skip(skip)
-    .limit(limit);
+    .limit(limit)
+    .lean();
 
   res.status(200).json({
     status: HttpStatusText.SUCCESS,
@@ -65,7 +66,8 @@ const getSingleBook = AsyncWrapper(async (req, res, next) => {
   const id = req.params.id;
   const book = await Book.findById(id)
     .populate("author", "name -_id")
-    .populate("category", "name -_id");
+    .populate("category", "name -_id")
+    .lean();
   if (!book) {
     const error = new AppError(404, "Book not found", HttpStatusText.FAIL);
     return next(error);

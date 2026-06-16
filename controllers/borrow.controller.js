@@ -6,7 +6,7 @@ const AppError = require("../utils/AppError.js");
 const handleValidationErrors = require("../utils/handleValidationErrors");
 //// Get All Borrows
 const getAllBorrows = AsyncWrapper(async (req, res, next) => {
-  const borrows = await Borrow.find().populate("book", "title -_id");
+  const borrows = await Borrow.find().populate("book", "title -_id").lean();
   res.status(200).json({
     status: HttpStatusText.SUCCESS,
     data: {
@@ -18,7 +18,9 @@ const getAllBorrows = AsyncWrapper(async (req, res, next) => {
 //// get single borrow
 const getBorrowById = AsyncWrapper(async (req, res, next) => {
   const { id } = req.params;
-  const borrow = await Borrow.findById(id).populate("book", "title -_id");
+  const borrow = await Borrow.findById(id)
+    .populate("book", "title -_id")
+    .lean();
   if (!borrow) {
     const error = new AppError(
       404,

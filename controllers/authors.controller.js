@@ -5,13 +5,13 @@ const AppError = require("../utils/AppError.js");
 const handleValidationErrors = require("../utils/handleValidationErrors");
 //////get all authors
 const getAllAuthors = AsyncWrapper(async (req, res, next) => {
-  const authors = await Author.find();
+  const authors = await Author.find().lean();
   res.status(200).json({ status: HttpStatusText.SUCCESS, data: authors });
 });
 ///// get author by id
 const getSingleAuthor = AsyncWrapper(async (req, res, next) => {
   const { id } = req.params;
-  const author = await Author.findById(id);
+  const author = await Author.findById(id).lean();
   if (!author) {
     const error = new AppError(404, "Author not found", HttpStatusText.FAIL);
     return next(error);
