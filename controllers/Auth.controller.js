@@ -77,7 +77,6 @@ const protect = AsyncWrapper(async (req, res, next) => {
     );
   }
   ///4-check password has changed
-  console.log(decoded);
 
   const changedpass = freshUser.changedPasswordAfter(decoded.iat);
   if (changedpass) {
