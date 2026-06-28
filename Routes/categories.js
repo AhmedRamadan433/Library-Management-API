@@ -4,6 +4,7 @@ const {
   createCategoryValidationSchema,
   updateCategoryValidationSchema,
 } = require("../middleware/category.validator.js");
+const { restrictTo } = require("../controllers/Auth.controller.js");
 const router = express.Router();
 
 /*
@@ -24,6 +25,6 @@ router
   .get(CategoriesController.getSingleCategory)
   .put(createCategoryValidationSchema(), CategoriesController.replaceCategory)
   .patch(updateCategoryValidationSchema(), CategoriesController.updateCategory)
-  .delete(CategoriesController.deleteCategory);
+  .delete(restrictTo("admin"), CategoriesController.deleteCategory);
 
 module.exports = router;

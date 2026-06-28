@@ -6,7 +6,7 @@ const BorrowRoutes = require("./borrow");
 const CategoriesRoutes = require("./categories");
 const AuthRoutes = require("./Auth.js");
 const router = express.Router();
-router.use("/", AuthRoutes);
+router.use("/users", AuthRoutes);
 router.use(Authcontroller.protect);
 router.use("/authors", AuthorRoutes);
 router.use("/books", BooksRoutes);

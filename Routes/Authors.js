@@ -4,6 +4,7 @@ const {
   createAuthorValidationSchema,
   updateAuthorValidationSchema,
 } = require("../middleware/author.validator.js");
+const { restrictTo } = require("../controllers/Auth.controller.js");
 const router = express.Router();
 /*
 Routes For route : "/authors"
@@ -18,6 +19,6 @@ router
   .get(authorsController.getSingleAuthor)
   .put(createAuthorValidationSchema(), authorsController.updateAuthor)
   .patch(updateAuthorValidationSchema(), authorsController.patchAuthor)
-  .delete(authorsController.deleteAuthor);
+  .delete(restrictTo("admin"), authorsController.deleteAuthor);
 ///
 module.exports = router;

@@ -2,7 +2,9 @@ const user = require("../models/user.model.js");
 const AsyncWrapper = require("../middleware/AsyncWrapper.js");
 const jwt = require("jsonwebtoken");
 const AppError = require("../utils/AppError.js");
+const sendEmail = require("../utils/NodeMailer.js");
 const HttpStatusText = require("../utils/HttpStatusText.js");
+const crypto = require("crypto");
 const { promisify } = require("util");
 const createToken = function (id) {
   return jwt.sign({ id }, process.env.jwt_secret, {
@@ -10,13 +12,24 @@ const createToken = function (id) {
   });
 };
 
+const filterObj = (obj, ...allowedFields) => {
+  const newObj = {};
+  Object.keys(obj).forEach((el) => {
+    if (allowedFields.includes(el)) {
+      newObj[el] = obj[el];
+    }
+  });
+  return newObj;
+};
 const signup = AsyncWrapper(async (req, res, next) => {
   const newUser = await user.create({
     name: req.body.name,
     email: req.body.email,
+    role: req.body.role,
     password: req.body.password,
     passwordConfirm: req.body.passwordConfirm,
   });
+
   const token = createToken(newUser._id);
   res.status(201).json({ status: "success", token, data: newUser });
 });
@@ -33,7 +46,10 @@ const login = AsyncWrapper(async (req, res, next) => {
     return next(error);
   }
   ///2- check is user exist (wrong email) || wrong password
-  const CurrentUser = await user.findOne({ email }).select("+password");
+  const CurrentUser = await user
+    .findOne({ email })
+    .select("+password")
+    .setOptions({ includeInactive: true });
   if (
     !CurrentUser ||
     !(await CurrentUser.correct(password, CurrentUser.password))
@@ -46,6 +62,8 @@ const login = AsyncWrapper(async (req, res, next) => {
     return next(error);
   }
   ////3- input are correct
+  CurrentUser.Active = true;
+  await CurrentUser.save({ validateBeforeSave: false });
   const token = createToken(CurrentUser._id);
   res.status(200).json({ status: "success", token });
 });
@@ -65,6 +83,7 @@ const protect = AsyncWrapper(async (req, res, next) => {
 
   ///3- chek user is exist
   const freshUser = await user.findById(decoded.id);
+  // .setOptions({ includeInactive: true });
   // console.log(freshUser._id);
 
   if (!freshUser) {
@@ -85,4 +104,168 @@ const protect = AsyncWrapper(async (req, res, next) => {
   req.user = freshUser;
   next();
 });
-module.exports = { signup, login, protect };
+
+/////
+const restrictTo = (...roles) => {
+  return (req, res, next) => {
+    if (!roles.includes(req.user.role)) {
+      return next(
+        new AppError(
+          403,
+          "You do not have permission to perform this action",
+          HttpStatusText.FAIL,
+        ),
+      );
+    }
+    next();
+  };
+};
+/////forget password
+const forgetPassword = AsyncWrapper(async (req, res, next) => {
+  const { email } = req.body;
+  /////1- get user based on email
+  if (!email) {
+    return next(
+      new AppError(400, "Please Provide Your Email", HttpStatusText.FAIL),
+    );
+  }
+  const fetchedUser = await user.findOne({ email });
+  if (!fetchedUser) {
+    return next(
+      new AppError(
+        404,
+        "There is no user with this email",
+        HttpStatusText.FAIL,
+      ),
+    );
+  }
+  /////2- generate random reset token
+  const userToken = fetchedUser.FrogetPasswordToken();
+
+  console.log("userToken:", userToken);
+  await fetchedUser.save({ validateBeforeSave: false });
+  // 3- send it to user email
+  const resetURL = `${req.protocol}://${req.get("host")}/users/forgetPassword/${userToken}`;
+  try {
+    await sendEmail({
+      email: fetchedUser.email,
+      subject: "Reset Your Password",
+      message: resetURL,
+    });
+  } catch (err) {
+    fetchedUser.passwordResetToken = undefined;
+    fetchedUser.passwordResetExpires = undefined;
+    await fetchedUser.save({ validateBeforeSave: false });
+    return next(
+      new AppError(
+        500,
+        "There was an error sending the email. Try again later!",
+        HttpStatusText.FAIL,
+      ),
+    );
+  }
+  res.status(200).json({
+    status: HttpStatusText.SUCCESS,
+    message: "Reset token sent to email",
+  });
+});
+/////////// update password
+const resetPassword = AsyncWrapper(async (req, res, next) => {
+  /////1- get token from url
+  const hashedToken = crypto
+    .createHash("sha256")
+    .update(req.params.token)
+    .digest("hex");
+  const fetchedUser = await user.findOne({
+    passwordResetToken: hashedToken,
+    passwordResetExpires: { $gt: Date.now() },
+  });
+  //////2-check if user found or token expired
+  if (!fetchedUser) {
+    return next(
+      new AppError(400, "Token is invalid or has expired", HttpStatusText.FAIL),
+    );
+  }
+  ////3-update password
+  fetchedUser.password = req.body.newPass;
+  fetchedUser.passwordConfirm = req.body.newPassConfirm;
+  fetchedUser.passwordResetToken = undefined;
+  fetchedUser.passwordResetExpires = undefined;
+  await fetchedUser.save();
+  res.status(200).json({
+    status: HttpStatusText.SUCCESS,
+    message: "Password Updated Successfully",
+  });
+});
+///////// update password for logged in user
+const updatePassword = AsyncWrapper(async (req, res, next) => {
+  /////1- get user from collection
+  const fetcheduser = await user.findById(req.user.id).select("+password");
+  /////2- ask for current password and check if it is correct
+  if (
+    !(await fetcheduser.correct(req.body.CurrentPassword, fetcheduser.password))
+  ) {
+    return next(
+      new AppError(401, "Your current password is wrong", HttpStatusText.FAIL),
+    );
+  }
+  ////3- if so, update password
+  fetcheduser.password = req.body.password;
+  fetcheduser.passwordConfirm = req.body.passwordConfirm;
+  await fetcheduser.save();
+  /////4- get new jwt token
+  const newToken = createToken(fetcheduser._id);
+  res.status(200).json({
+    status: HttpStatusText.SUCCESS,
+    token: newToken,
+  });
+});
+
+//////////Update user data for logged in user
+const updateMe = AsyncWrapper(async (req, res, next) => {
+  ////1- create error if user try to update password data
+  if (req.body.password || req.body.passwordConfirm) {
+    return next(
+      new AppError(
+        400,
+        "This route is not for password update. Please use /updateMyPassword",
+        HttpStatusText.FAIL,
+      ),
+    );
+  }
+  ///// 2- update user document
+  const filteredBody = filterObj(req.body, "name", "email");
+  const updatedUser = await user.findByIdAndUpdate(req.user.id, filteredBody, {
+    returnDocument: "after",
+    runValidators: true,
+  });
+  res.status(200).json({
+    status: HttpStatusText.SUCCESS,
+    data: updatedUser,
+  });
+});
+/////// Delete User {Set inactive}
+const deleteMe = AsyncWrapper(async (req, res, next) => {
+  const cuserId = req.user.id;
+
+  await user.findByIdAndUpdate(
+    cuserId,
+    { Active: false },
+    { validateBeforeSave: false },
+  );
+  res.status(204).json({
+    status: HttpStatusText.SUCCESS,
+    data: null,
+  });
+});
+module.exports = {
+  signup,
+  login,
+  protect,
+  restrictTo,
+  forgetPassword,
+  resetPassword,
+  updatePassword,
+  updateMe,
+  deleteMe,
+};

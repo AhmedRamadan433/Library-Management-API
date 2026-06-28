@@ -21,6 +21,18 @@ app.use((req, res, next) => {
   });
 });
 app.use((err, req, res, next) => {
+  let errors = [];
+
+  if (err.name === "ValidationError") {
+    console.log("Validation Error");
+    return res.status(400).json({
+      status: "FAIL",
+      errName: err.name,
+      message: Object.values(err.errors)
+        .map((el) => el.message)
+        .join(", "),
+    });
+  }
   res.status(err.statusCode || 500).json({
     status: err.statustext || HttpStatusText.ERROR,
     message: err.message || "Something Went Wrong",
