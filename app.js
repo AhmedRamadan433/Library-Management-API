@@ -1,10 +1,27 @@
 const express = require("express");
 const cors = require("cors");
 const morgan = require("morgan");
+const helmet = require("helmet");
+// const mongosanitize = require("express-mongo-sanitize");
+// const xss = require("xss-clean");
+const hpp = require("hpp");
+const { rateLimit } = require("express-rate-limit");
 const Routes = require("./Routes/All_Routes.js");
 const HttpStatusText = require("./utils/HttpStatusText");
 ////
 const app = express();
+app.use(helmet());
+app.use(hpp());
+// app.use(mongosanitize());
+// app.use(xss());
+///////Rate limit
+const limiter = rateLimit({
+  max: 100,
+  windowMs: 60 * 60 * 1000,
+  message: "Too many Requests from this IP, Please try again in an hour",
+});
+//////
+app.use(limiter);
 app.use(cors());
 app.use(morgan("dev"));
 app.use(express.json());

@@ -11,7 +11,23 @@ const createToken = function (id) {
     expiresIn: process.env.jwt_maxage,
   });
 };
-
+const createSendToken = (user, statusCode, res) => {
+  const token = createToken(user._id);
+  const cookieOptions = {
+    expires: new Date(
+      Date.now() + process.env.jwt_cookie_maxage * 24 * 60 * 60 * 1000,
+    ),
+    httpOnly: true,
+  };
+  if (process.env.NODE_ENV === "production") cookieOptions.secure = true;
+  res.cookie("jwt", token, cookieOptions);
+  user.password = undefined;
+  res.status(statusCode).json({
+    status: "success",
+    token,
+    data: user,
+  });
+};
 const filterObj = (obj, ...allowedFields) => {
   const newObj = {};
   Object.keys(obj).forEach((el) => {
@@ -29,9 +45,7 @@ const signup = AsyncWrapper(async (req, res, next) => {
     password: req.body.password,
     passwordConfirm: req.body.passwordConfirm,
   });
-
-  const token = createToken(newUser._id);
-  res.status(201).json({ status: "success", token, data: newUser });
+  createSendToken(newUser, 201, res);
 });
 ///// log in
 const login = AsyncWrapper(async (req, res, next) => {
@@ -64,8 +78,7 @@ const login = AsyncWrapper(async (req, res, next) => {
   ////3- input are correct
   CurrentUser.Active = true;
   await CurrentUser.save({ validateBeforeSave: false });
-  const token = createToken(CurrentUser._id);
-  res.status(200).json({ status: "success", token });
+  createSendToken(CurrentUser, 200, res);
 });
 //////protect
 const protect = AsyncWrapper(async (req, res, next) => {
@@ -214,11 +227,7 @@ const updatePassword = AsyncWrapper(async (req, res, next) => {
   fetcheduser.passwordConfirm = req.body.passwordConfirm;
   await fetcheduser.save();
   /////4- get new jwt token
-  const newToken = createToken(fetcheduser._id);
-  res.status(200).json({
-    status: HttpStatusText.SUCCESS,
-    token: newToken,
-  });
+  createSendToken(fetcheduser, 200, res);
 });
 
 //////////Update user data for logged in user
@@ -239,10 +248,7 @@ const updateMe = AsyncWrapper(async (req, res, next) => {
     returnDocument: "after",
     runValidators: true,
   });
-  res.status(200).json({
-    status: HttpStatusText.SUCCESS,
-    data: updatedUser,
-  });
+  createSendToken(updatedUser, 200, res);
 });
 /////// Delete User {Set inactive}
 const deleteMe = AsyncWrapper(async (req, res, next) => {
